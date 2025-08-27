@@ -1,9 +1,10 @@
 package com.mojang.rubydung;
 
+import com.mojang.rubydung.gui.Font;
 import com.mojang.rubydung.level.Chunk;
 import com.mojang.rubydung.level.Level;
 import com.mojang.rubydung.level.LevelRenderer;
-
+import com.mojang.rubydung.level.Tesselator;
 import com.mojang.util.GLAllocation;
 import net.lax1dude.eaglercraft.EagRuntime;
 
@@ -25,6 +26,7 @@ public class RubyDung implements Runnable {
 	private int height;
 	private int lastWidth;
 	private int lastHeight;
+	private Font font;
 	private FloatBuffer fogColor = GLAllocation.createFloatBuffer(4);
 	private Timer timer = new Timer(60.0F);
 	private Level level;
@@ -33,6 +35,13 @@ public class RubyDung implements Runnable {
 	private IntBuffer viewportBuffer = GLAllocation.createIntBuffer(16);
 	private IntBuffer selectBuffer = GLAllocation.createIntBuffer(2000);
 	private HitResult hitResult = null;
+	int frames = 0;
+	private String fpsString = "";
+	private boolean showAutosave = false;
+	private int autosaveTex = -1;
+	private int autosaveFrame = 0;
+	private int autosaveTick = 0;
+	private int autosaveDisplayTime = 0;
 
 	public void init() throws LWJGLException, IOException {
 		int col = 920330;
@@ -55,6 +64,8 @@ public class RubyDung implements Runnable {
 		this.level = new Level(256, 256, 64);
 		this.levelRenderer = new LevelRenderer(this.level);
 		this.player = new Player(this.level);
+		this.font = new Font("/default.gif", new Textures());
+		this.autosaveTex = Textures.loadTexture("/autosave.png", GL11.GL_NEAREST);
 		Mouse.setGrabbed(true);
 	}
 	
@@ -79,7 +90,6 @@ public class RubyDung implements Runnable {
 		}
 
 		long lastTime = System.currentTimeMillis();
-		int frames = 0;
 
 		try {
 			while(!Display.isCloseRequested() && (EagRuntime.getPlatformType() != EnumPlatformType.DESKTOP || !Keyboard.isKeyDown(Keyboard.KEY_ESCAPE))) {
@@ -93,6 +103,7 @@ public class RubyDung implements Runnable {
 				++frames;
 
 				while(System.currentTimeMillis() >= lastTime + 1000L) {
+					this.fpsString = frames + " fps, " + Chunk.updates + " chunk updates";
 					System.out.println(frames + " fps, " + Chunk.updates);
 					Chunk.updates = 0;
 					lastTime += 1000L;
@@ -116,6 +127,11 @@ public class RubyDung implements Runnable {
 	    if (saveCountdown <= 0) {
 	        level.save();
 	        saveCountdown = 600;
+	        
+	        showAutosave = true;
+	        autosaveFrame = 0;
+	        autosaveTick = 0;
+	        autosaveDisplayTime = 60;
 	    }
 	}
 
@@ -123,6 +139,18 @@ public class RubyDung implements Runnable {
 	public void tick() {
 		this.player.tick();
 		levelSave();
+		if (showAutosave) {
+		    autosaveTick++;
+		    if (autosaveTick >= 6) {
+		        autosaveTick = 0;
+		        autosaveFrame = (autosaveFrame + 1) % 9;
+		    }
+
+		    autosaveDisplayTime--;
+		    if (autosaveDisplayTime <= 0) {
+		        showAutosave = false;
+		    }
+		}
 	}
 
 	private void moveCameraToPlayer(float a) {
@@ -292,7 +320,70 @@ public class RubyDung implements Runnable {
 		}
 
 		GL11.glDisable(GL11.GL_FOG);
+		drawgui();
 		Display.update();
+	}
+	
+	public void drawgui() {
+		int screenWidth = this.width * 240 / this.height;
+		int screenHeight = this.height * 240 / this.height;
+		GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+		GL11.glMatrixMode(GL11.GL_PROJECTION);
+		GL11.glPushMatrix();
+		GL11.glLoadIdentity();
+		GL11.glOrtho(0.0D, (double)screenWidth, (double)screenHeight, 0.0D, 100.0D, 300.0D);
+		GL11.glMatrixMode(GL11.GL_MODELVIEW);
+		GL11.glPushMatrix();
+		GL11.glLoadIdentity();
+		GL11.glTranslatef(0.0F, 0.0F, -200.0F);
+		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+		this.font.drawShadow("rd-132211(rd: recrafted)", 2, 2, 16777215);
+		this.font.drawShadow(fpsString, 2, 12, 16777215);
+		int wc = screenWidth / 2;
+		int hc = screenHeight / 2;
+		Tesselator t = Tesselator.instance;
+		t.init();
+		t.vertex((float)(wc + 1), (float)(hc - 4), 0.0F);
+		t.vertex((float)(wc - 0), (float)(hc - 4), 0.0F);
+		t.vertex((float)(wc - 0), (float)(hc + 5), 0.0F);
+		t.vertex((float)(wc + 1), (float)(hc + 5), 0.0F);
+		t.vertex((float)(wc + 5), (float)(hc - 0), 0.0F);
+		t.vertex((float)(wc - 4), (float)(hc - 0), 0.0F);
+		t.vertex((float)(wc - 4), (float)(hc + 1), 0.0F);
+		t.vertex((float)(wc + 5), (float)(hc + 1), 0.0F);
+		t.flush();
+		
+		if (showAutosave && autosaveTex >= 0) {
+			GL11.glEnable(GL11.GL_BLEND);
+		    GL11.glEnable(GL11.GL_TEXTURE_2D);
+			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+		    GL11.glBindTexture(GL11.GL_TEXTURE_2D, autosaveTex);
+
+		    int frameWidth = 18;
+		    int frameHeight = 30;
+
+		    float u0 = (autosaveFrame * frameWidth) / 162.0f;
+		    float u1 = ((autosaveFrame + 1) * frameWidth) / 162.0f;
+		    float v0 = 0.0f;
+		    float v1 = 1.0f;
+
+		    int x = screenWidth - frameWidth - 5;
+		    int y = 5;
+
+		    t.init();
+		    t.vertexUV(x, y + frameHeight, 0.0F, u0, v1);
+		    t.vertexUV(x + frameWidth, y + frameHeight, 0.0F, u1, v1);
+		    t.vertexUV(x + frameWidth, y, 0.0F, u1, v0);
+		    t.vertexUV(x, y, 0.0F, u0, v0);
+		    t.flush();
+
+		    GL11.glDisable(GL11.GL_TEXTURE_2D);
+		}
+	    GL11.glMatrixMode(GL11.GL_PROJECTION);
+	    GL11.glPopMatrix();
+	    GL11.glMatrixMode(GL11.GL_MODELVIEW);
+	    GL11.glPopMatrix();
+
 	}
 
 	public static void checkError() {

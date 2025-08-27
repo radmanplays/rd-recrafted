@@ -79,7 +79,7 @@ public class Tesselator {
 		}
 	}
 
-	public void addVertexWithUV(double var1, double var3, double var5, double var7, double var9) {
+	public void vertexUV(double var1, double var3, double var5, double var7, double var9) {
 		this.tex(var7, var9);
 		this.vertex(var1, var3, var5);
 	}
@@ -108,14 +108,14 @@ public class Tesselator {
 		worldRenderer.endVertex();
 	}
 
-	public void setColorOpaque_I(int var1) {
+	public void color(int var1) {
 		int var2 = var1 >> 16 & 255;
 		int var3 = var1 >> 8 & 255;
 		int var4 = var1 & 255;
 		this.color(var2, var3, var4);
 	}
 
-	public void setColorRGBA_I(int var1, int var2) {
+	public void color(int var1, int var2) {
 		int var3 = var1 >> 16 & 255;
 		int var4 = var1 >> 8 & 255;
 		int var5 = var1 & 255;
