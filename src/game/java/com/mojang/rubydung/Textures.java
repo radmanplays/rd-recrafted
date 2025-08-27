@@ -42,7 +42,9 @@ public class Textures {
 
             pixels.asIntBuffer().put(rawPixels);
             GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, w, h, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, pixels);
+            idMap.put(resourceName, id);
             return id;
+
         }
     }
 

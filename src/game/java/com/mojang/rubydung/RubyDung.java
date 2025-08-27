@@ -1,6 +1,8 @@
 package com.mojang.rubydung;
 
 import com.mojang.rubydung.gui.Font;
+import com.mojang.rubydung.gui.PauseScreen;
+import com.mojang.rubydung.gui.Screen;
 import com.mojang.rubydung.level.Chunk;
 import com.mojang.rubydung.level.Level;
 import com.mojang.rubydung.level.LevelRenderer;
@@ -22,20 +24,22 @@ import net.lax1dude.eaglercraft.internal.buffer.IntBuffer;
 
 public class RubyDung implements Runnable {
 	private static final boolean FULLSCREEN_MODE = false;
-	private int width;
-	private int height;
+	public int width;
+	public int height;
 	private int lastWidth;
 	private int lastHeight;
-	private Font font;
+	public Font font;
 	private FloatBuffer fogColor = GLAllocation.createFloatBuffer(4);
 	private Timer timer = new Timer(60.0F);
-	private Level level;
-	private LevelRenderer levelRenderer;
-	private Player player;
+	public Level level;
+	public LevelRenderer levelRenderer;
+	public Player player;
+	private Screen screen = null;
 	private IntBuffer viewportBuffer = GLAllocation.createIntBuffer(16);
 	private IntBuffer selectBuffer = GLAllocation.createIntBuffer(2000);
 	private HitResult hitResult = null;
 	int frames = 0;
+	private boolean mouseGrabbed = false;
 	private String fpsString = "";
 	private boolean showAutosave = false;
 	private int autosaveTex = -1;
@@ -66,7 +70,7 @@ public class RubyDung implements Runnable {
 		this.player = new Player(this.level);
 		this.font = new Font("/default.gif", new Textures());
 		this.autosaveTex = Textures.loadTexture("/autosave.png", GL11.GL_NEAREST);
-		Mouse.setGrabbed(true);
+		this.grabMouse();
 	}
 	
     private void setupProjection(int width, int height) {
@@ -80,6 +84,34 @@ public class RubyDung implements Runnable {
 		this.level.save();
 		EagRuntime.destroy();
 	}
+	
+	public void grabMouse() {
+		if(!this.mouseGrabbed) {
+			this.mouseGrabbed = true;
+			Mouse.setGrabbed(true);
+
+			this.setScreen((Screen)null);
+		}
+	}
+
+	public void releaseMouse() {
+		if(this.mouseGrabbed) {
+			this.mouseGrabbed = false;
+			Mouse.setGrabbed(false);
+
+			this.setScreen(new PauseScreen());
+		}
+	}
+	
+	public void setScreen(Screen screen) {
+		this.screen = screen;
+		if(screen != null) {
+			int screenWidth = this.width * 240 / this.height;
+			int screenHeight = this.height * 240 / this.height;
+			screen.init(this, screenWidth, screenHeight);
+		}
+
+	}
 
 	public void run() {
 		try {
@@ -92,7 +124,7 @@ public class RubyDung implements Runnable {
 		long lastTime = System.currentTimeMillis();
 
 		try {
-			while(!Display.isCloseRequested() && (EagRuntime.getPlatformType() != EnumPlatformType.DESKTOP || !Keyboard.isKeyDown(Keyboard.KEY_ESCAPE))) {
+			while(!Display.isCloseRequested()) {
 				this.timer.advanceTime();
 
 				for(int e = 0; e < this.timer.ticks; ++e) {
@@ -137,6 +169,12 @@ public class RubyDung implements Runnable {
 
 
 	public void tick() {
+		if(this.screen != null) {
+			this.screen.updateEvents();
+			if(this.screen != null) {
+				this.screen.tick();
+			}
+		}
 		this.player.tick();
 		levelSave();
 		if (showAutosave) {
@@ -244,56 +282,67 @@ public class RubyDung implements Runnable {
 		float yo = (float)Mouse.getDY();
 		this.player.turn(xo, yo);
 		this.pick(a);
-
-		while(Mouse.next()) {
-			if (Mouse.getEventButtonState()) {
+		if(this.screen == null) {
+			while(Mouse.next()) {
+				if (!this.mouseGrabbed && Mouse.getEventButtonState()) {
+					this.grabMouse();
+				}
+	
+				if(Mouse.getEventButton() == 1 && Mouse.getEventButtonState() && this.hitResult != null) {
+					this.level.setTile(this.hitResult.x, this.hitResult.y, this.hitResult.z, 0);
+				}
+	
+				if(Mouse.getEventButton() == 0 && Mouse.getEventButtonState() && this.hitResult != null) {
+					int x = this.hitResult.x;
+					int y = this.hitResult.y;
+					int z = this.hitResult.z;
+					if(this.hitResult.f == 0) {
+						--y;
+					}
+	
+					if(this.hitResult.f == 1) {
+						++y;
+					}
+	
+					if(this.hitResult.f == 2) {
+						--z;
+					}
+	
+					if(this.hitResult.f == 3) {
+						++z;
+					}
+	
+					if(this.hitResult.f == 4) {
+						--x;
+					}
+	
+					if(this.hitResult.f == 5) {
+						++x;
+					}
+	
+					this.level.setTile(x, y, z, 1);
+				}
+			}
+	
+			while(Keyboard.next()) {
 				Mouse.setGrabbed(true);
-			}
-
-			if(Mouse.getEventButton() == 1 && Mouse.getEventButtonState() && this.hitResult != null) {
-				this.level.setTile(this.hitResult.x, this.hitResult.y, this.hitResult.z, 0);
-			}
-
-			if(Mouse.getEventButton() == 0 && Mouse.getEventButtonState() && this.hitResult != null) {
-				int x = this.hitResult.x;
-				int y = this.hitResult.y;
-				int z = this.hitResult.z;
-				if(this.hitResult.f == 0) {
-					--y;
+				if(Keyboard.getEventKey() == Keyboard.KEY_ESCAPE) {
+					this.releaseMouse();
 				}
-
-				if(this.hitResult.f == 1) {
-					++y;
+				if(Keyboard.getEventKey() == Keyboard.KEY_RETURN && Keyboard.getEventKeyState()) {
+					this.level.save();
+			        showAutosave = true;
+			        autosaveFrame = 0;
+			        autosaveTick = 0;
+			        autosaveDisplayTime = 60;
 				}
-
-				if(this.hitResult.f == 2) {
-					--z;
+				if(Keyboard.getEventKey() == Keyboard.KEY_BACK && Keyboard.getEventKeyState()) {
+					this.level.reset();
+					this.player.resetPos();
+					this.level = new Level(256, 256, 64);
+					this.levelRenderer = new LevelRenderer(this.level);
+					this.player = new Player(this.level);
 				}
-
-				if(this.hitResult.f == 3) {
-					++z;
-				}
-
-				if(this.hitResult.f == 4) {
-					--x;
-				}
-
-				if(this.hitResult.f == 5) {
-					++x;
-				}
-
-				this.level.setTile(x, y, z, 1);
-			}
-		}
-
-		while(Keyboard.next()) {
-			Mouse.setGrabbed(true);
-			if(Keyboard.getEventKey() == Keyboard.KEY_RETURN && Keyboard.getEventKeyState()) {
-				this.level.save();
-			}
-			if(Keyboard.getEventKey() == Keyboard.KEY_BACK && Keyboard.getEventKeyState()) {
-				this.level.reset();
-				this.player.resetPos();
 			}
 		}
 
@@ -367,7 +416,7 @@ public class RubyDung implements Runnable {
 		    float v0 = 0.0f;
 		    float v1 = 1.0f;
 
-		    int x = screenWidth - frameWidth - 5;
+		    int x = screenWidth - frameWidth - 15;
 		    int y = 5;
 
 		    t.init();
@@ -376,8 +425,14 @@ public class RubyDung implements Runnable {
 		    t.vertexUV(x + frameWidth, y, 0.0F, u1, v0);
 		    t.vertexUV(x, y, 0.0F, u0, v0);
 		    t.flush();
+		    this.font.drawShadow("Saving...", screenWidth - this.font.width("Saving...") - 5, 40, 16777215);
 
 		    GL11.glDisable(GL11.GL_TEXTURE_2D);
+		}
+		int xMouse = Mouse.getX() * screenWidth / this.width;
+		int yMouse = screenHeight - Mouse.getY() * screenHeight / this.height - 1;
+		if(this.screen != null) {
+			this.screen.render(xMouse, yMouse);
 		}
 	    GL11.glMatrixMode(GL11.GL_PROJECTION);
 	    GL11.glPopMatrix();

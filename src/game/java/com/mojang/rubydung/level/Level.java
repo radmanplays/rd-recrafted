@@ -12,9 +12,9 @@ public class Level {
 	public final int width;
 	public final int height;
 	public final int depth;
-	private byte[] blocks;
+	public byte[] blocks;
 	private int[] lightDepths;
-	private ArrayList<LevelListener> levelListeners = new ArrayList();
+	public ArrayList<LevelListener> levelListeners = new ArrayList();
 
 	public Level(int w, int h, int d) {
 		this.width = w;

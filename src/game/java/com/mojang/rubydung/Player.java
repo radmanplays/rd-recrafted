@@ -96,7 +96,7 @@ public class Player {
 		}
 
 	}
-
+	
 	public void move(float xa, float ya, float za) {
 		float xaOrg = xa;
 		float yaOrg = ya;
