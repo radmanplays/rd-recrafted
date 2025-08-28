@@ -151,6 +151,11 @@ public class RubyDung implements Runnable {
 			System.out.println("Failed to start RubyDung");
 			throw new RuntimeException(var9);
 		}
+		
+		if(this.screen == null && Mouse.isActuallyGrabbed()) {
+			this.setScreen((Screen)null);
+			this.setScreen(new PauseScreen());
+		}
 
 		long lastTime = System.currentTimeMillis();
 
