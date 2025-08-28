@@ -56,6 +56,7 @@ public class RubyDung implements Runnable {
 	private long lastLeftClickTime = 0;
 	private long lastRightClickTime = 0;
 	private final long actionDelay = 200;
+	private long prevFrameTime = System.currentTimeMillis();
 	private static final int[] AUTOSAVE_INTERVALS = {
 		    600,
 		    900,
@@ -135,6 +136,7 @@ public class RubyDung implements Runnable {
 	    if (this.height == 0) {
 	        return;
 	    }
+
 		this.screen = screen;
 		if(screen != null) {
 			int screenWidth = this.width * 240 / this.height;
@@ -150,11 +152,6 @@ public class RubyDung implements Runnable {
 		} catch (Exception var9) {
 			System.out.println("Failed to start RubyDung");
 			throw new RuntimeException(var9);
-		}
-		
-		if(this.screen == null && Mouse.isActuallyGrabbed()) {
-			this.setScreen((Screen)null);
-			this.setScreen(new PauseScreen());
 		}
 
 		long lastTime = System.currentTimeMillis();
@@ -253,6 +250,17 @@ public class RubyDung implements Runnable {
             setupProjection(this.width, this.height);
         }
 		GL11.glLoadIdentity();
+		
+	    if (!Display.isActive()) {
+	        if (System.currentTimeMillis() - prevFrameTime > 500L) {
+	            if (this.screen == null) {
+	            	releaseMouse();
+	            }
+	        }
+	    } else {
+	        prevFrameTime = System.currentTimeMillis();
+	    }
+		
 		this.moveCameraToPlayer(a);
 	}
 
