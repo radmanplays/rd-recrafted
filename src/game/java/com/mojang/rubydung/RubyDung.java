@@ -51,13 +51,18 @@ public class RubyDung implements Runnable {
 	private int autosaveTick = 0;
 	private int autosaveDisplayTime = 0;
 	private long lastSpaceTap = 0;
+	private boolean leftMouseDown = false;
+	private boolean rightMouseDown = false;
+	private long lastLeftClickTime = 0;
+	private long lastRightClickTime = 0;
+	private final long actionDelay = 200;
 	private static final int[] AUTOSAVE_INTERVALS = {
 		    600,
 		    900,
 		    1800,
 		    10800,
 		    -1
-		};
+	};
 
 	public void init() throws LWJGLException, IOException {
 		int col = 920330;
@@ -319,43 +324,37 @@ public class RubyDung implements Runnable {
 				if (!this.mouseGrabbed && Mouse.getEventButtonState()) {
 					this.grabMouse();
 				}
-	
-				if(Mouse.getEventButton() == 0 && Mouse.getEventButtonState() && this.hitResult != null) {
-					this.level.setTile(this.hitResult.x, this.hitResult.y, this.hitResult.z, 0);
-				}
-	
-				if(Mouse.getEventButton() == 1 && Mouse.getEventButtonState() && this.hitResult != null) {
-					int x = this.hitResult.x;
-					int y = this.hitResult.y;
-					int z = this.hitResult.z;
-					if(this.hitResult.f == 0) {
-						--y;
-					}
-	
-					if(this.hitResult.f == 1) {
-						++y;
-					}
-	
-					if(this.hitResult.f == 2) {
-						--z;
-					}
-	
-					if(this.hitResult.f == 3) {
-						++z;
-					}
-	
-					if(this.hitResult.f == 4) {
-						--x;
-					}
-	
-					if(this.hitResult.f == 5) {
-						++x;
-					}
-	
-					this.level.setTile(x, y, z, 1);
-				}
+				
+	            if (Mouse.getEventButton() == 0) leftMouseDown = Mouse.getEventButtonState();
+	            if (Mouse.getEventButton() == 1) rightMouseDown = Mouse.getEventButtonState();
 			}
-	
+	            
+	            long now = System.currentTimeMillis();
+
+	            if (leftMouseDown && this.hitResult != null) {
+	                if (now - lastLeftClickTime >= actionDelay) {
+	                    this.level.setTile(this.hitResult.x, this.hitResult.y, this.hitResult.z, 0);
+	                    lastLeftClickTime = now;
+	                }
+	            }
+
+	            if (rightMouseDown && this.hitResult != null) {
+	                if (now - lastRightClickTime >= actionDelay) {
+	                    int x = this.hitResult.x;
+	                    int y = this.hitResult.y;
+	                    int z = this.hitResult.z;
+	                    switch (this.hitResult.f) {
+		                    case 0: y--; break;
+		                    case 1: y++; break;
+		                    case 2: z--; break;
+		                    case 3: z++; break;
+		                    case 4: x--; break;
+		                    case 5: x++; break;
+		                }
+	                    this.level.setTile(x, y, z, 1);
+	                    lastRightClickTime = now;
+	                }
+	            }	
 			while(Keyboard.next()) {
 				Mouse.setGrabbed(true);
 				if(Keyboard.getEventKey() == Keyboard.KEY_ESCAPE) {
@@ -377,7 +376,6 @@ public class RubyDung implements Runnable {
 					this.player = new Player(this.level);
 				}
 				if (settings.fly && Keyboard.getEventKey() == Keyboard.KEY_SPACE && Keyboard.getEventKeyState()) {
-				    long now = System.currentTimeMillis();
 				    if (now - lastSpaceTap < 250) {
 				        player.isFlying = !player.isFlying;
 				        player.yd = 0.0F;

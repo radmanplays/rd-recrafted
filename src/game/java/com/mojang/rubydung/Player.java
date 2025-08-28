@@ -21,10 +21,8 @@ public class Player {
 	public AABB bb;
 	public boolean onGround = false;
 	public boolean isFlying = false;
-	private float flySpeed = 0.02F;
 	private float maxFlySpeed = 0.2F;
-	private float flyAcceleration = 0.02F;
-	private boolean isMovingKeyDown = false;
+	private float flyAcceleration = 0.002F;
 
 
 	public Player(Level level) {
@@ -89,7 +87,7 @@ public class Player {
 		}
 		
 	    if (isFlying) {
-	        float flySpeed = 0.02F;
+	        float flySpeed = 0.013F;
 	        boolean moving = xa != 0 || ya != 0 
 	        	    || Keyboard.isKeyDown(Keyboard.KEY_SPACE) 
 	        	    || Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) 
