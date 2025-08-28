@@ -37,7 +37,7 @@ public class RubyDung implements Runnable {
 	public Level level;
 	public LevelRenderer levelRenderer;
 	public Player player;
-	private Screen screen = null;
+	static Screen screen = null;
 	private IntBuffer viewportBuffer = GLAllocation.createIntBuffer(16);
 	private IntBuffer selectBuffer = GLAllocation.createIntBuffer(2000);
 	private HitResult hitResult = null;
@@ -50,6 +50,7 @@ public class RubyDung implements Runnable {
 	private int autosaveFrame = 0;
 	private int autosaveTick = 0;
 	private int autosaveDisplayTime = 0;
+	private long lastSpaceTap = 0;
 	private static final int[] AUTOSAVE_INTERVALS = {
 		    600,
 		    900,
@@ -374,6 +375,14 @@ public class RubyDung implements Runnable {
 					this.level = new Level(256, 256, 64);
 					this.levelRenderer = new LevelRenderer(this.level);
 					this.player = new Player(this.level);
+				}
+				if (settings.fly && Keyboard.getEventKey() == Keyboard.KEY_SPACE && Keyboard.getEventKeyState()) {
+				    long now = System.currentTimeMillis();
+				    if (now - lastSpaceTap < 250) {
+				        player.isFlying = !player.isFlying;
+				        player.yd = 0.0F;
+				    }
+				    lastSpaceTap = now;
 				}
 			}
 		}

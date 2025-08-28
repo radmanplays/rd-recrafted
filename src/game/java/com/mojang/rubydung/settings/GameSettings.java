@@ -22,7 +22,7 @@ public final class GameSettings {
 		bindings = new KeyBinding[] { forwardKey, leftKey, backKey, rightKey, jumpKey, buildKey, chatKey, toggleFogKey,
 				saveLocationKey, loadLocationKey, gameModeKey };
 
-		settingCount = 6;
+		settingCount = 7;
 
 		this.minecraft = minecraft;
 
@@ -39,6 +39,7 @@ public final class GameSettings {
 	public boolean showCords = false;
 	public boolean invertMouse = false;
 	public boolean limitFramerate = true;
+	public boolean fly = false;
 	public KeyBinding forwardKey = new KeyBinding("Forward", 17);
 	public KeyBinding leftKey = new KeyBinding("Left", 30);
 	public KeyBinding backKey = new KeyBinding("Back", 31);
@@ -91,6 +92,14 @@ public final class GameSettings {
 		if (setting == 5) {
 			limitFramerate = !limitFramerate;
 		}
+		if (setting == 6) {
+		    fly = !fly;
+		    if (!fly && minecraft.player != null) {
+		        minecraft.player.isFlying = false;
+		        minecraft.player.yd = 0.0f;
+		    }
+		}
+
 
 		save();
 	}
@@ -101,7 +110,9 @@ public final class GameSettings {
 						: (id == 2 ? "Invert mouse: " + (invertMouse ? "ON" : "OFF")
 								: (id == 3 ? "Show FPS: " + (showFrameRate ? "ON" : "OFF")
 										: (id == 4 ? "Show Cords: " + (showCords ? "ON" : "OFF")
-											: (id == 5 ? "Limit framerate: " + (limitFramerate ? "ON" : "OFF") : "")))));
+											: (id == 5 ? "Limit framerate: " + (limitFramerate ? "ON" : "OFF")
+												: (id == 6 ? "Fly: " + (fly ? "ON" : "OFF") : "")
+														)))));
 	}
 
 	private void load() {
@@ -137,6 +148,10 @@ public final class GameSettings {
 					if (setting[0].equals("limitFramerate")) {
 						limitFramerate = setting[1].equals("true");
 					}
+					
+					if (setting[0].equals("fly")) {
+					    fly = setting[1].equals("true");
+					}
 
 					for (int index = 0; index < this.bindings.length; index++) {
 						if (setting[0].equals("key_" + bindings[index].name)) {
@@ -163,6 +178,7 @@ public final class GameSettings {
 			writer.println("showFrameRate:" + showFrameRate);
 			writer.println("showCords:" + showCords);
 			writer.println("limitFramerate:" + limitFramerate);
+			writer.println("fly:" + fly);
 
 			for (int binding = 0; binding < bindings.length; binding++) {
 				writer.println("key_" + bindings[binding].name + ":" + bindings[binding].key);
