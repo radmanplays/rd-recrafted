@@ -1,19 +1,24 @@
 package com.mojang.rubydung;
 
+import com.mojang.rubydung.character.Zombie;
 import com.mojang.rubydung.gui.Font;
 import com.mojang.rubydung.gui.PauseScreen;
 import com.mojang.rubydung.gui.Screen;
 import com.mojang.rubydung.level.Chunk;
+import com.mojang.rubydung.level.Frustum;
 import com.mojang.rubydung.level.Level;
 import com.mojang.rubydung.level.LevelRenderer;
 import com.mojang.rubydung.level.Tesselator;
 import com.mojang.rubydung.settings.GameSettings;
 import com.mojang.util.GLAllocation;
 import com.mojang.util.MathHelper;
+import com.mojang.rubydung.Textures;
 
 import net.lax1dude.eaglercraft.EagRuntime;
 
 import java.io.IOException;
+import java.util.ArrayList;
+
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -57,6 +62,7 @@ public class RubyDung implements Runnable {
 	private long lastRightClickTime = 0;
 	private final long actionDelay = 200;
 	private long prevFrameTime = System.currentTimeMillis();
+	private ArrayList<Zombie> zombies = new ArrayList();
 	private static final int[] AUTOSAVE_INTERVALS = {
 		    600,
 		    900,
@@ -99,6 +105,12 @@ public class RubyDung implements Runnable {
 		this.grabMouse();
 		int interval = AUTOSAVE_INTERVALS[settings.autosave];
 		saveCountdown = interval > 0 ? interval : Integer.MAX_VALUE;
+		
+		for(int i = 0; i < 10; ++i) {
+			Zombie zombie = new Zombie(this.level, 128.0F, 0.0F, 128.0F);
+			zombie.resetPos();
+			this.zombies.add(zombie);
+		}
 	}
 	
     private void setupProjection(int width, int height) {
@@ -212,6 +224,13 @@ public class RubyDung implements Runnable {
 				this.screen.tick();
 			}
 		}
+		for(int i = 0; i < this.zombies.size(); ++i) {
+			((Zombie)this.zombies.get(i)).tick();
+			if(((Zombie)this.zombies.get(i)).removed) {
+				this.zombies.remove(i--);
+			}
+		}
+		
 		this.player.tick();
 		levelSave();
 		if (showAutosave) {
@@ -395,6 +414,10 @@ public class RubyDung implements Runnable {
 				    }
 				    lastSpaceTap = now;
 				}
+				
+				if(Keyboard.getEventKey() == Keyboard.KEY_G) {
+					this.zombies.add(new Zombie(this.level, this.player.x, this.player.y, this.player.z));
+				}
 			}
 		}
 
@@ -432,8 +455,23 @@ public class RubyDung implements Runnable {
 		GL11.glFog(GL11.GL_FOG_COLOR, this.fogColor);
 		GL11.glDisable(GL11.GL_FOG);
 		this.levelRenderer.render(this.player, 0);
+		Frustum var9 = Frustum.getFrustum();
+		Zombie var10;
+		for(int var8 = 0; var8 < this.zombies.size(); ++var8) {
+			var10 = (Zombie)this.zombies.get(var8);
+			if(var10.isLit() && var9.cubeInFrustum(var10.bb)) {
+				((Zombie)this.zombies.get(var8)).render(a);
+			}
+		}
 		GL11.glEnable(GL11.GL_FOG);
+		
 		this.levelRenderer.render(this.player, 1);
+		for(int var8 = 0; var8 < this.zombies.size(); ++var8) {
+			var10 = (Zombie)this.zombies.get(var8);
+			if(!var10.isLit() && var9.cubeInFrustum(var10.bb)) {
+				((Zombie)this.zombies.get(var8)).render(a);
+			}
+		}
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
 		if(this.hitResult != null) {
 			this.levelRenderer.renderHit(this.hitResult);

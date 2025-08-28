@@ -160,6 +160,10 @@ public class Level {
 	public boolean isTile(int x, int y, int z) {
 		return x >= 0 && y >= 0 && z >= 0 && x < this.width && y < this.depth && z < this.height ? this.blocks[(y * this.height + z) * this.width + x] == 1 : false;
 	}
+	
+	public boolean isLit(int x, int y, int z) {
+		return x >= 0 && y >= 0 && z >= 0 && x < this.width && y < this.depth && z < this.height ? y >= this.lightDepths[x + z * this.width] : true;
+	}
 
 	public boolean isSolidTile(int x, int y, int z) {
 		return this.isTile(x, y, z);
