@@ -22,7 +22,7 @@ public final class GameSettings {
 		bindings = new KeyBinding[] { forwardKey, leftKey, backKey, rightKey, jumpKey, buildKey, chatKey, toggleFogKey,
 				saveLocationKey, loadLocationKey, gameModeKey };
 
-		settingCount = 5;
+		settingCount = 6;
 
 		this.minecraft = minecraft;
 
@@ -38,7 +38,7 @@ public final class GameSettings {
 	public boolean showFrameRate = true;
 	public boolean showCords = false;
 	public boolean invertMouse = false;
-	public boolean limitFramerate = false;
+	public boolean limitFramerate = true;
 	public KeyBinding forwardKey = new KeyBinding("Forward", 17);
 	public KeyBinding leftKey = new KeyBinding("Left", 30);
 	public KeyBinding backKey = new KeyBinding("Back", 31);
@@ -88,7 +88,7 @@ public final class GameSettings {
 			showCords = !showCords;
 		}
 
-		if (setting == 7) {
+		if (setting == 5) {
 			limitFramerate = !limitFramerate;
 		}
 

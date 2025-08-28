@@ -421,6 +421,11 @@ public class RubyDung implements Runnable {
 
 		GL11.glDisable(GL11.GL_FOG);
 		drawgui();
+		if(Display.isVSyncSupported()) {
+			Display.setVSync(this.settings.limitFramerate);
+		} else {
+			this.settings.limitFramerate = false;
+		}
 		Display.update();
 	}
 	
