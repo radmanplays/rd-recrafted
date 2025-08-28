@@ -7,7 +7,10 @@ import com.mojang.rubydung.level.Chunk;
 import com.mojang.rubydung.level.Level;
 import com.mojang.rubydung.level.LevelRenderer;
 import com.mojang.rubydung.level.Tesselator;
+import com.mojang.rubydung.settings.GameSettings;
 import com.mojang.util.GLAllocation;
+import com.mojang.util.MathHelper;
+
 import net.lax1dude.eaglercraft.EagRuntime;
 
 import java.io.IOException;
@@ -38,6 +41,7 @@ public class RubyDung implements Runnable {
 	private IntBuffer viewportBuffer = GLAllocation.createIntBuffer(16);
 	private IntBuffer selectBuffer = GLAllocation.createIntBuffer(2000);
 	private HitResult hitResult = null;
+	public GameSettings settings;
 	int frames = 0;
 	private boolean mouseGrabbed = false;
 	private String fpsString = "";
@@ -46,6 +50,13 @@ public class RubyDung implements Runnable {
 	private int autosaveFrame = 0;
 	private int autosaveTick = 0;
 	private int autosaveDisplayTime = 0;
+	private static final int[] AUTOSAVE_INTERVALS = {
+		    600,
+		    900,
+		    1800,
+		    10800,
+		    -1
+		};
 
 	public void init() throws LWJGLException, IOException {
 		int col = 920330;
@@ -65,12 +76,22 @@ public class RubyDung implements Runnable {
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glDepthFunc(GL11.GL_LEQUAL);
 		setupProjection(this.width, this.height);
+		this.settings = new GameSettings(this);
 		this.level = new Level(256, 256, 64);
 		this.levelRenderer = new LevelRenderer(this.level);
 		this.player = new Player(this.level);
+		float[] pos = level.loadPlayer();
+		if (pos != null) {
+		    player.x = pos[0];
+		    player.y = pos[1];
+		    player.z = pos[2];
+		    player.setPos(pos[0], pos[1], pos[2]);
+		}
 		this.font = new Font("/default.gif", new Textures());
 		this.autosaveTex = Textures.loadTexture("/autosave.png", GL11.GL_NEAREST);
 		this.grabMouse();
+		int interval = AUTOSAVE_INTERVALS[settings.autosave];
+		saveCountdown = interval > 0 ? interval : Integer.MAX_VALUE;
 	}
 	
     private void setupProjection(int width, int height) {
@@ -82,6 +103,7 @@ public class RubyDung implements Runnable {
 
 	public void destroy() {
 		this.level.save();
+		level.savePlayer(player.x, player.y, player.z);
 		EagRuntime.destroy();
 	}
 	
@@ -104,6 +126,9 @@ public class RubyDung implements Runnable {
 	}
 	
 	public void setScreen(Screen screen) {
+	    if (this.height == 0) {
+	        return;
+	    }
 		this.screen = screen;
 		if(screen != null) {
 			int screenWidth = this.width * 240 / this.height;
@@ -150,15 +175,19 @@ public class RubyDung implements Runnable {
 
 	}
 	
-	private int saveCountdown = 600;
+	private int saveCountdown;
 
 	private void levelSave() {
 	    if (level == null) return;
+	    
+	    int interval = AUTOSAVE_INTERVALS[settings.autosave];
+	    if (interval <= 0) return;
 
 	    saveCountdown--;
 	    if (saveCountdown <= 0) {
 	        level.save();
-	        saveCountdown = 600;
+	        level.savePlayer(player.x, player.y, player.z);
+	        saveCountdown = interval;
 	        
 	        showAutosave = true;
 	        autosaveFrame = 0;
@@ -190,6 +219,7 @@ public class RubyDung implements Runnable {
 		    }
 		}
 	}
+
 
 	private void moveCameraToPlayer(float a) {
 		GL11.glTranslatef(0.0F, 0.0F, -0.3F);
@@ -280,6 +310,7 @@ public class RubyDung implements Runnable {
 	public void render(float a) {
 		float xo = (float)Mouse.getDX();
 		float yo = (float)Mouse.getDY();
+		if (settings.invertMouse) yo = -yo;
 		this.player.turn(xo, yo);
 		this.pick(a);
 		if(this.screen == null) {
@@ -288,11 +319,11 @@ public class RubyDung implements Runnable {
 					this.grabMouse();
 				}
 	
-				if(Mouse.getEventButton() == 1 && Mouse.getEventButtonState() && this.hitResult != null) {
+				if(Mouse.getEventButton() == 0 && Mouse.getEventButtonState() && this.hitResult != null) {
 					this.level.setTile(this.hitResult.x, this.hitResult.y, this.hitResult.z, 0);
 				}
 	
-				if(Mouse.getEventButton() == 0 && Mouse.getEventButtonState() && this.hitResult != null) {
+				if(Mouse.getEventButton() == 1 && Mouse.getEventButtonState() && this.hitResult != null) {
 					int x = this.hitResult.x;
 					int y = this.hitResult.y;
 					int z = this.hitResult.z;
@@ -331,6 +362,7 @@ public class RubyDung implements Runnable {
 				}
 				if(Keyboard.getEventKey() == Keyboard.KEY_RETURN && Keyboard.getEventKeyState()) {
 					this.level.save();
+					level.savePlayer(player.x, player.y, player.z);
 			        showAutosave = true;
 			        autosaveFrame = 0;
 			        autosaveTick = 0;
@@ -350,6 +382,11 @@ public class RubyDung implements Runnable {
 			this.width = Display.getWidth();
 			this.height = Display.getHeight();
 			GL11.glViewport(0, 0, this.width, this.height);
+			if(this.screen != null) {
+				Screen sc = this.screen;
+				this.setScreen((Screen)null);
+				this.setScreen(sc);
+			}
 		}
 
 		GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_COLOR_BUFFER_BIT);
@@ -357,7 +394,21 @@ public class RubyDung implements Runnable {
 		GL11.glEnable(GL11.GL_CULL_FACE);
 		GL11.glEnable(GL11.GL_FOG);
 		GL11.glFogi(GL11.GL_FOG_MODE, GL11.GL_EXP);
-		GL11.glFogf(GL11.GL_FOG_DENSITY, 0.2F);
+	    float density;
+	    switch (settings.shadowfog) {
+	        case 1:
+	            density = 0.05f;
+	            break;
+	        case 2:
+	            density = 0.1f;
+	            break;
+	        case 3:
+	            density = 0.2f;
+	            break;
+	        default:
+	            density = 0f;
+	    }
+		GL11.glFogf(GL11.GL_FOG_DENSITY, density);
 		GL11.glFog(GL11.GL_FOG_COLOR, this.fogColor);
 		GL11.glDisable(GL11.GL_FOG);
 		this.levelRenderer.render(this.player, 0);
@@ -373,7 +424,20 @@ public class RubyDung implements Runnable {
 		Display.update();
 	}
 	
+	double round(double value) {
+	    return Math.round(value * 100.0) / 100.0;
+	}
+	String format(double value) {
+	    int temp = (int) Math.round(value * 100);
+	    int integerPart = temp / 100;
+	    int decimalPart = temp % 100;
+	    return integerPart + "." + (decimalPart < 10 ? "0" + decimalPart : decimalPart);
+	}
+	
 	public void drawgui() {
+	    if (this.height == 0) {
+	        return;
+	    }
 		int screenWidth = this.width * 240 / this.height;
 		int screenHeight = this.height * 240 / this.height;
 		GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
@@ -386,8 +450,17 @@ public class RubyDung implements Runnable {
 		GL11.glLoadIdentity();
 		GL11.glTranslatef(0.0F, 0.0F, -200.0F);
 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-		this.font.drawShadow("rd-132211(rd: recrafted)", 2, 2, 16777215);
-		this.font.drawShadow(fpsString, 2, 12, 16777215);
+		if(settings.showFrameRate || settings.showCords) {
+			this.font.drawShadow("rd-132211(rd: recrafted)", 2, 2, 16777215);
+		}
+		if(settings.showFrameRate) {
+			this.font.drawShadow(fpsString, 2, 12, 16777215);
+		}
+		if (settings.showCords) {
+		    int y = settings.showFrameRate ? 22 : 12;
+		    this.font.drawShadow("XYZ: " + format(player.x) + " " + format(player.y) + " " + format(player.z), 2, y, 16777215);
+		}
+
 		int wc = screenWidth / 2;
 		int hc = screenHeight / 2;
 		Tesselator t = Tesselator.instance;

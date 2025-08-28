@@ -33,7 +33,7 @@ public class Player {
 		this.setPos(x, y, z);
 	}
 
-	private void setPos(float x, float y, float z) {
+	public void setPos(float x, float y, float z) {
 		this.x = x;
 		this.y = y;
 		this.z = z;

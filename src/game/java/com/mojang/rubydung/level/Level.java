@@ -68,6 +68,38 @@ public class Level {
 		}
 
 	}
+	
+	public void savePlayer(float x, float y, float z) {
+	    try {
+	        VFile2 file = new VFile2("player.dat");
+	        DataOutputStream out = new DataOutputStream(new GZIPOutputStream(file.getOutputStream()));
+	        out.writeFloat(x);
+	        out.writeFloat(y);
+	        out.writeFloat(z);
+	        out.close();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	}
+
+	public float[] loadPlayer() {
+	    try {
+	        VFile2 file = new VFile2("player.dat");
+	        if (!file.exists()) {
+	            return null;
+	        }
+	        DataInputStream in = new DataInputStream(new GZIPInputStream(file.getInputStream()));
+	        float x = in.readFloat();
+	        float y = in.readFloat();
+	        float z = in.readFloat();
+	        in.close();
+	        return new float[]{x, y, z};
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return null;
+	    }
+	}
+
 
 	public void reset() {
 		try {
