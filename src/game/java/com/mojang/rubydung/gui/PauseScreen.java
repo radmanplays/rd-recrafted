@@ -71,8 +71,8 @@ public class PauseScreen extends Screen {
 	}
 
 	public void render(int xm, int ym) {
-		this.fillGradient(0, 0, this.width, this.height, 1610941696, -1607454624);
-		super.render(xm, ym);
+		this.fillGradient(0, 0, this.width, this.height, 0x60000000, -1607454624);
 		drawCenteredString("Pause menu", this.width / 2, 40, 16777215);
+		super.render(xm, ym);
 	}
 }

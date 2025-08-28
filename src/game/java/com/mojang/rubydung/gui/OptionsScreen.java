@@ -66,7 +66,7 @@ public class OptionsScreen extends Screen {
 	}
 
 	public void render(int xm, int ym) {
-		this.fillGradient(0, 0, this.width, this.height, 1610941696, -1607454624);
+		this.fillGradient(0, 0, this.width, this.height, 0x60000000, -1607454624);
 		drawCenteredString(this.title, this.width / 2, 20, 16777215);
 		super.render(xm, ym);
 	}
