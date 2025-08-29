@@ -143,8 +143,9 @@ public class RubyDung implements Runnable {
 		if(this.mouseGrabbed) {
 			this.mouseGrabbed = false;
 			Mouse.setGrabbed(false);
-
-			this.setScreen(new PauseScreen());
+			if(screen == null) {
+				this.setScreen(new PauseScreen());
+			}
 		}
 	}
 	
@@ -275,7 +276,7 @@ public class RubyDung implements Runnable {
 		GL11.glLoadIdentity();
 		
 	    if (!Display.isActive() || !Mouse.isMouseGrabbed() || !Mouse.isActuallyGrabbed()) {
-	        if (System.currentTimeMillis() - prevFrameTime > 500L) {
+	        if (System.currentTimeMillis() - prevFrameTime > 250L) {
 	            if (this.screen == null) {
 	            	releaseMouse();
 	            }
@@ -426,7 +427,7 @@ public class RubyDung implements Runnable {
 					this.player = new Player(this.level);
 				}
 				if (settings.fly && Keyboard.getEventKey() == Keyboard.KEY_SPACE && Keyboard.getEventKeyState()) {
-				    if (now - lastSpaceTap >= 40 && now - lastSpaceTap <= 250) {
+				    if (now - lastSpaceTap >= 50 && now - lastSpaceTap <= 250) {
 				        player.isFlying = !player.isFlying;
 				        player.yd = 0.0F;
 				    }
