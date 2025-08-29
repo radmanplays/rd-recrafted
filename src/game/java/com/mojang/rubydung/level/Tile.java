@@ -1,5 +1,8 @@
 package com.mojang.rubydung.level;
 
+import com.mojang.rubydung.particle.Particle;
+import com.mojang.rubydung.particle.ParticleEngine;
+
 public class Tile {
 	public static Tile rock = new Tile(0);
 	public static Tile grass = new Tile(1);
@@ -166,6 +169,23 @@ public class Tile {
 			t.vertex(x1, y0, z0);
 			t.vertex(x1, y1, z0);
 			t.vertex(x1, y1, z1);
+		}
+
+	}
+	
+
+	public void addParticle(Level level, int x, int y, int z, ParticleEngine particleEngine) {
+		byte SD = 4;
+
+		for(int xx = 0; xx < SD; ++xx) {
+			for(int yy = 0; yy < SD; ++yy) {
+				for(int zz = 0; zz < SD; ++zz) {
+					float xp = (float)x + ((float)xx + 0.5F) / (float)SD;
+					float yp = (float)y + ((float)yy + 0.5F) / (float)SD;
+					float zp = (float)z + ((float)zz + 0.5F) / (float)SD;
+					particleEngine.add(new Particle(level, xp, yp, zp, xp - (float)x - 0.5F, yp - (float)y - 0.5F, zp - (float)z - 0.5F, this.tex));
+				}
+			}
 		}
 
 	}

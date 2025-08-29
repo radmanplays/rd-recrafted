@@ -21,10 +21,17 @@ public class Entity {
 	public boolean onGround = false;
 	protected float heightOffset = 0.0F;
 	public boolean removed = false;
+	protected float bbWidth = 0.6F;
+	protected float bbHeight = 1.8F;
 
 	public Entity(Level level) {
 		this.level = level;
 		this.resetPos();
+	}
+	
+	protected void setSize(float w, float h) {
+		this.bbWidth = w;
+		this.bbHeight = h;
 	}
 
 	public void resetPos() {
@@ -38,8 +45,8 @@ public class Entity {
 		this.x = x;
 		this.y = y;
 		this.z = z;
-		float w = 0.3F;
-		float h = 0.9F;
+		float w = this.bbWidth / 2.0F;
+		float h = this.bbHeight / 2.0F;
 		this.bb = new AABB(x - w, y - h, z - w, x + w, y + h, z + w);
 	}
 	

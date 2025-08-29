@@ -9,6 +9,8 @@ import com.mojang.rubydung.level.Frustum;
 import com.mojang.rubydung.level.Level;
 import com.mojang.rubydung.level.LevelRenderer;
 import com.mojang.rubydung.level.Tesselator;
+import com.mojang.rubydung.level.Tile;
+import com.mojang.rubydung.particle.ParticleEngine;
 import com.mojang.rubydung.settings.GameSettings;
 import com.mojang.util.GLAllocation;
 import com.mojang.util.MathHelper;
@@ -63,6 +65,7 @@ public class RubyDung implements Runnable {
 	private final long actionDelay = 200;
 	private long prevFrameTime = System.currentTimeMillis();
 	private ArrayList<Zombie> zombies = new ArrayList();
+	private ParticleEngine particleEngine;
 	private static final int[] AUTOSAVE_INTERVALS = {
 		    600,
 		    900,
@@ -100,6 +103,7 @@ public class RubyDung implements Runnable {
 		    player.z = pos[2];
 		    player.setPos(pos[0], pos[1], pos[2]);
 		}
+		this.particleEngine = new ParticleEngine(this.level, new Textures());
 		this.font = new Font("/default.gif", new Textures());
 		this.autosaveTex = Textures.loadTexture("/autosave.png", GL11.GL_NEAREST);
 		this.grabMouse();
@@ -230,7 +234,7 @@ public class RubyDung implements Runnable {
 				this.zombies.remove(i--);
 			}
 		}
-		
+		this.particleEngine.tick();
 		this.player.tick();
 		levelSave();
 		if (showAutosave) {
@@ -365,6 +369,20 @@ public class RubyDung implements Runnable {
 
 	            if (leftMouseDown && this.hitResult != null) {
 	                if (now - lastLeftClickTime >= actionDelay) {
+	                	if(settings.renderparticles) {
+		                    int blockX = this.hitResult.x;
+		                    int blockY = this.hitResult.y;
+		                    int blockZ = this.hitResult.z;
+		                    if (this.level.isTile(blockX, blockY, blockZ)) {
+		                        int surfaceLevel = this.level.depth * 2 / 3;
+	
+		                        if (blockY == surfaceLevel) {
+		                            Tile.rock.addParticle(this.level, blockX, blockY, blockZ, this.particleEngine);
+		                        } else {
+		                            Tile.grass.addParticle(this.level, blockX, blockY, blockZ, this.particleEngine);
+		                        }
+		                    }
+	                	}
 	                    this.level.setTile(this.hitResult.x, this.hitResult.y, this.hitResult.z, 0);
 	                    lastLeftClickTime = now;
 	                }
@@ -464,7 +482,7 @@ public class RubyDung implements Runnable {
 			}
 		}
 		GL11.glEnable(GL11.GL_FOG);
-		
+		this.particleEngine.render(this.player, a, 0);
 		this.levelRenderer.render(this.player, 1);
 		for(int var8 = 0; var8 < this.zombies.size(); ++var8) {
 			var10 = (Zombie)this.zombies.get(var8);
@@ -472,6 +490,7 @@ public class RubyDung implements Runnable {
 				((Zombie)this.zombies.get(var8)).render(a);
 			}
 		}
+		this.particleEngine.render(this.player, a, 1);
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
 		if(this.hitResult != null) {
 			this.levelRenderer.renderHit(this.hitResult);

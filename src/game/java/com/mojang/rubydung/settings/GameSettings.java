@@ -22,7 +22,7 @@ public final class GameSettings {
 		bindings = new KeyBinding[] { forwardKey, leftKey, backKey, rightKey, jumpKey, buildKey, chatKey, toggleFogKey,
 				saveLocationKey, loadLocationKey, gameModeKey };
 
-		settingCount = 7;
+		settingCount = 8;
 
 		this.minecraft = minecraft;
 
@@ -40,6 +40,7 @@ public final class GameSettings {
 	public boolean invertMouse = false;
 	public boolean limitFramerate = true;
 	public boolean fly = false;
+	public boolean renderparticles = true;
 	public KeyBinding forwardKey = new KeyBinding("Forward", 17);
 	public KeyBinding leftKey = new KeyBinding("Left", 30);
 	public KeyBinding backKey = new KeyBinding("Back", 31);
@@ -99,6 +100,9 @@ public final class GameSettings {
 		        minecraft.player.yd = 0.0f;
 		    }
 		}
+		if (setting == 7) {
+			renderparticles = !renderparticles;
+		}
 
 
 		save();
@@ -111,8 +115,9 @@ public final class GameSettings {
 								: (id == 3 ? "Show FPS: " + (showFrameRate ? "ON" : "OFF")
 										: (id == 4 ? "Show Cords: " + (showCords ? "ON" : "OFF")
 											: (id == 5 ? "Limit framerate: " + (limitFramerate ? "ON" : "OFF")
-												: (id == 6 ? "Fly: " + (fly ? "ON" : "OFF") : "")
-														)))));
+												: (id == 6 ? "Fly: " + (fly ? "ON" : "OFF")
+														: (id == 7 ? "Render Particles: " + (renderparticles ? "ON" : "OFF"): "")
+														))))));
 	}
 
 	private void load() {
@@ -152,6 +157,10 @@ public final class GameSettings {
 					if (setting[0].equals("fly")) {
 					    fly = setting[1].equals("true");
 					}
+					
+					if (setting[0].equals("renderparticles")) {
+						renderparticles = setting[1].equals("true");
+					}
 
 					for (int index = 0; index < this.bindings.length; index++) {
 						if (setting[0].equals("key_" + bindings[index].name)) {
@@ -179,6 +188,7 @@ public final class GameSettings {
 			writer.println("showCords:" + showCords);
 			writer.println("limitFramerate:" + limitFramerate);
 			writer.println("fly:" + fly);
+			writer.println("renderparticles:" + renderparticles);
 
 			for (int binding = 0; binding < bindings.length; binding++) {
 				writer.println("key_" + bindings[binding].name + ":" + bindings[binding].key);
