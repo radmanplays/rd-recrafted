@@ -274,7 +274,7 @@ public class RubyDung implements Runnable {
         }
 		GL11.glLoadIdentity();
 		
-	    if (!Display.isActive()) {
+	    if (!Display.isActive() || !Mouse.isMouseGrabbed() || !Mouse.isActuallyGrabbed()) {
 	        if (System.currentTimeMillis() - prevFrameTime > 500L) {
 	            if (this.screen == null) {
 	            	releaseMouse();

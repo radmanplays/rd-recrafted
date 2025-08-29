@@ -24,6 +24,7 @@ public class Screen {
 	protected float imgZ = 0.0F;
 
 	public void render(int var1, int var2) {
+		Mouse.setGrabbed(false);
 		for(int i = 0; i < this.buttons.size(); ++i) {
 			Button button = (Button)this.buttons.get(i);
 			if (button.visible) {
