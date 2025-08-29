@@ -427,6 +427,7 @@ public class RubyDung implements Runnable {
 					this.player = new Player(this.level);
 				}
 				if (settings.fly && Keyboard.getEventKey() == Keyboard.KEY_SPACE && Keyboard.getEventKeyState()) {
+					Keyboard.enableRepeatEvents(false);
 				    if (now - lastSpaceTap >= 50 && now - lastSpaceTap <= 250) {
 				        player.isFlying = !player.isFlying;
 				        player.yd = 0.0F;
