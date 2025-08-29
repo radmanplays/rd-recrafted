@@ -44,7 +44,7 @@ public class Particle extends Entity {
 			this.remove();
 		}
 
-		this.yd = (float)((double)this.yd - 0.04D);
+		this.yd = (float)((double)this.yd - 0.03D);
 		this.move(this.xd, this.yd, this.zd);
 		this.xd *= 0.38F;
 		this.yd *= 0.38F;
